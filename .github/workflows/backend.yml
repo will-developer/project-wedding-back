@@ -22,7 +22,7 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Verify with PostgreSQL Testcontainers
-        run: ./mvnw --batch-mode --no-transfer-progress verify -Dspring.flyway.enabled=false -Dspring.jpa.hibernate.ddl-auto=validate
+        run: ./mvnw --batch-mode --no-transfer-progress verify
       - name: Package Lambda ZIP
         shell: bash
         run: |
