@@ -1,6 +1,11 @@
 spring:
   application:
     name: wedding-api
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
 
 server:
   port: ${PORT:8080}
