@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p target/lambda
-          cp target/wedding-api-0.0.1-SNAPSHOT.jar target/lambda/app.jar
+          cp target/wedding-api.jar target/lambda/app.jar
           cp scripts/run.sh target/lambda/run.sh
           chmod 755 target/lambda/run.sh
           cd target/lambda
