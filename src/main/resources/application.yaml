@@ -3,12 +3,23 @@ spring:
     name: wedding-api
   flyway:
     enabled: false
+  session:
+    timeout: 7d
+    jdbc:
+      initialize-schema: never
   jpa:
     hibernate:
       ddl-auto: validate
 
 server:
   port: ${PORT:8080}
+  servlet:
+    session:
+      cookie:
+        max-age: 7d
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: lax
 
 app:
   cors:
