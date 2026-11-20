@@ -66,6 +66,11 @@ jobs:
         with:
           name: wedding-api-${{ github.sha }}
           path: artifact
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
       - name: Validate configuration and package
         shell: bash
         run: |
@@ -79,6 +84,13 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
+      - name: Migrate homolog database
+        shell: bash
+        env:
+          FLYWAY_URL: ${{ secrets.HOMOLOG_DB_URL }}
+          FLYWAY_USER: ${{ secrets.HOMOLOG_DB_USERNAME }}
+          FLYWAY_PASSWORD: ${{ secrets.HOMOLOG_DB_PASSWORD }}
+        run: bash scripts/migrate-homolog.sh
       - name: Publish and verify homolog
         run: bash scripts/deploy-homolog.sh
 

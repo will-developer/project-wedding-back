@@ -66,6 +66,6 @@ fi
   echo "- Previous version: $previous_version"
   echo "- ZIP SHA-256: $(sha256sum "$package" | cut -d ' ' -f 1)"
   echo "- Health: UP"
-  echo "- Flyway: disabled pending schema review"
+  echo "- Flyway: executed by the preceding pipeline migration step; disabled in Lambda"
 } >> "$GITHUB_STEP_SUMMARY"
 
