@@ -1,8 +1,9 @@
-package br.com.wedding.api.event;
+package br.com.wedding.api.common.exceptions;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -11,9 +12,15 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-@RestControllerAdvice(assignableTypes = EventController.class)
-public class EventExceptionHandler {
+@RestControllerAdvice
+public class ApiExceptionHandler {
+
+    @ExceptionHandler(EventNotFoundException.class)
+    public ProblemDetail eventNotFound(EventNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail persistenceConflict(DataIntegrityViolationException exception) {
@@ -24,10 +31,15 @@ public class EventExceptionHandler {
                 return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                         "A wedding is already registered. Only one event is allowed.");
             }
+            if (cause instanceof ConstraintViolationException violation
+                    && "invite_group_invite_code_key".equals(violation.getConstraintName())) {
+                return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                        "An invitation with this code already exists. Please try again.");
+            }
             cause = cause.getCause();
         }
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
-                "The event could not be saved.");
+                "The data could not be saved.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -44,6 +56,12 @@ public class EventExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ProblemDetail invalidJson() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-                "Invalid JSON or date format. Use ISO-8601 dates with an offset for eventDate.");
+                "Invalid JSON or field format. Use ISO-8601 dates with an offset for eventDate.");
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail invalidParameter() {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Invalid URL parameter. Use a valid UUID for identifiers.");
     }
 }
