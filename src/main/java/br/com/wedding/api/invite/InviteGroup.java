@@ -1,7 +1,5 @@
 package br.com.wedding.api.invite;
 
-import static java.util.Objects.requireNonNull;
-
 import java.time.Instant;
 import java.util.UUID;
 
@@ -14,12 +12,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "invite_group")
 @Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InviteGroup {
 
@@ -42,15 +44,4 @@ public class InviteGroup {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public InviteGroup(Event event, String groupName, String inviteCode, String notes) {
-        this.event = requireNonNull(event, "event is required");
-        this.groupName = requireNonNull(groupName, "groupName is required");
-        if (inviteCode == null || !inviteCode.matches("[A-Z0-9]{6}")) {
-            throw new IllegalArgumentException("inviteCode must contain six uppercase letters or digits");
-        }
-        this.inviteCode = inviteCode;
-        this.notes = notes;
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
-    }
 }

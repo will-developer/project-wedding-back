@@ -1,7 +1,5 @@
 package br.com.wedding.api.invite;
 
-import static java.util.Objects.requireNonNull;
-
 import java.time.Instant;
 import java.util.UUID;
 
@@ -15,6 +13,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -23,6 +23,8 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(name = "guest")
 @Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Guest {
 
@@ -47,11 +49,4 @@ public class Guest {
     @Column(name = "responded_at")
     private Instant respondedAt;
 
-    public Guest(InviteGroup group, String name, boolean child) {
-        this.group = requireNonNull(group, "group is required");
-        this.name = requireNonNull(name, "name is required");
-        this.child = child;
-        this.id = UUID.randomUUID();
-        this.rsvpStatus = RsvpStatus.PENDING;
-    }
 }

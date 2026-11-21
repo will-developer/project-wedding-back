@@ -50,9 +50,27 @@ class InvitePersistenceTests {
                 .rsvpDeadline(LocalDate.of(2027, 6, 1))
                 .createdAt(Instant.now())
                 .build());
-        InviteGroup group = groups.saveAndFlush(new InviteGroup(event, "Test family", "A1B2C3", null));
-        Guest adult = guests.saveAndFlush(new Guest(group, "Test adult", false));
-        Guest child = guests.saveAndFlush(new Guest(group, "Test child", true));
+        InviteGroup group = groups.saveAndFlush(InviteGroup.builder()
+                .id(UUID.randomUUID())
+                .event(event)
+                .groupName("Test family")
+                .inviteCode("A1B2C3")
+                .createdAt(Instant.now())
+                .build());
+        Guest adult = guests.saveAndFlush(Guest.builder()
+                .id(UUID.randomUUID())
+                .group(group)
+                .name("Test adult")
+                .child(false)
+                .rsvpStatus(RsvpStatus.PENDING)
+                .build());
+        Guest child = guests.saveAndFlush(Guest.builder()
+                .id(UUID.randomUUID())
+                .group(group)
+                .name("Test child")
+                .child(true)
+                .rsvpStatus(RsvpStatus.PENDING)
+                .build());
         entityManager.clear();
 
         Guest loaded = guests.findById(adult.getId()).orElseThrow();
