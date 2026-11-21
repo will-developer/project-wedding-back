@@ -5,6 +5,9 @@ import static org.springframework.security.core.authority.AuthorityUtils.createA
 
 import br.com.wedding.api.invite.InviteGroup;
 import br.com.wedding.api.invite.InviteGroupRepository;
+import br.com.wedding.api.invite.GuestRepository;
+import br.com.wedding.api.invite.access.dto.GuestInvitationResponse;
+import br.com.wedding.api.invite.dto.GuestResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,6 +20,27 @@ import org.springframework.transaction.annotation.Transactional;
 public class GuestAccessService {
 
     private final InviteGroupRepository groups;
+    private final GuestRepository guests;
+
+    @Transactional(readOnly = true)
+    public GuestInvitationResponse invitation(GuestIdentity identity) {
+        InviteGroup group = groups.findById(identity.getGroupId())
+                .filter(invite -> invite.getEvent().getId().equals(identity.getEventId()))
+                .orElseThrow(() -> new BadCredentialsException("Invalid invitation session."));
+
+        return GuestInvitationResponse.builder()
+                .groupName(group.getGroupName())
+                .guests(guests.findAllByGroupIdOrderByNameAscIdAsc(group.getId()).stream()
+                        .map(guest -> GuestResponse.builder()
+                                .id(guest.getId())
+                                .name(guest.getName())
+                                .child(guest.isChild())
+                                .rsvpStatus(guest.getRsvpStatus().getDatabaseValue())
+                                .respondedAt(guest.getRespondedAt())
+                                .build())
+                        .toList())
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public Authentication authenticate(String rawCode) {
