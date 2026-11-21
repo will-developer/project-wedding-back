@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import br.com.wedding.api.event.Event;
 import br.com.wedding.api.event.EventRepository;
@@ -38,9 +39,17 @@ class InvitePersistenceTests {
 
     @Test
     void persistsEventGroupAndGuestsUsingExistingSchemaAndNativeEnum() {
-        Event event = events.saveAndFlush(new Event("Test wedding",
-                Instant.parse("2027-06-12T18:00:00Z"), "Ceremony", null,
-                LocalDate.of(2027, 6, 1)));
+        Event event = events.saveAndFlush(Event.builder()
+                .id(UUID.randomUUID())
+                .title("Test wedding")
+                .eventDate(Instant.parse("2027-06-12T18:00:00Z"))
+                .ceremonyLocation("Ceremony")
+                .receptionLocation("Reception")
+                .ceremonyMapsUrl("https://maps.app.goo.gl/testCeremony")
+                .receptionMapsUrl("https://maps.app.goo.gl/testReception")
+                .rsvpDeadline(LocalDate.of(2027, 6, 1))
+                .createdAt(Instant.now())
+                .build());
         InviteGroup group = groups.saveAndFlush(new InviteGroup(event, "Test family", "A1B2C3", null));
         Guest adult = guests.saveAndFlush(new Guest(group, "Test adult", false));
         Guest child = guests.saveAndFlush(new Guest(group, "Test child", true));
