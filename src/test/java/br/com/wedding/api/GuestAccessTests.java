@@ -2,6 +2,9 @@ package br.com.wedding.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,12 +27,17 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(properties = "spring.flyway.enabled=true")
+@AutoConfigureMockMvc
 @Transactional
 class GuestAccessTests {
 
@@ -39,6 +47,8 @@ class GuestAccessTests {
     private EventRepository events;
     @Autowired
     private InviteGroupRepository groups;
+    @Autowired
+    private MockMvc mvc;
 
     private Event event;
     private InviteGroup family;
@@ -62,10 +72,16 @@ class GuestAccessTests {
     @ParameterizedTest
     @ValueSource(strings = {"A1B2C3", "a1b2c3", "  a1b2c3  "})
     void identifiesFamilyFromNormalizedCode(String code) {
-        GuestIdentity identity = service.authenticate(code);
+        Authentication result = service.authenticate(code);
+        GuestIdentity identity = (GuestIdentity) result.getPrincipal();
 
         assertThat(identity.getGroupId()).isEqualTo(family.getId());
         assertThat(identity.getEventId()).isEqualTo(event.getId());
+        assertThat(result.isAuthenticated()).isTrue();
+        assertThat(result.getName()).isEqualTo(family.getId().toString());
+        assertThat(result.getCredentials()).isNull();
+        assertThat(result.getAuthorities()).extracting(GrantedAuthority::getAuthority)
+                .containsExactly("ROLE_GUEST");
         assertThat(groups.count()).isEqualTo(1);
     }
 
@@ -83,22 +99,39 @@ class GuestAccessTests {
     void differentCodesIdentifyDifferentFamilies() {
         InviteGroup secondFamily = saveGroup("Second family", "D4E5F6");
 
-        assertThat(service.authenticate("A1B2C3").getGroupId()).isEqualTo(family.getId());
-        assertThat(service.authenticate("D4E5F6").getGroupId()).isEqualTo(secondFamily.getId());
+        GuestIdentity first = (GuestIdentity) service.authenticate("A1B2C3").getPrincipal();
+        GuestIdentity second = (GuestIdentity) service.authenticate("D4E5F6").getPrincipal();
+        assertThat(first.getGroupId()).isEqualTo(family.getId());
+        assertThat(second.getGroupId()).isEqualTo(secondFamily.getId());
     }
 
     @Test
-    void identityCanBeSerializedForJdbcSessionStorage() throws Exception {
-        GuestIdentity identity = service.authenticate("A1B2C3");
+    void authenticationCanBeSerializedForJdbcSessionStorage() throws Exception {
+        Authentication result = service.authenticate("A1B2C3");
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (ObjectOutputStream output = new ObjectOutputStream(bytes)) {
-            output.writeObject(identity);
+            output.writeObject(result);
         }
         try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
-            GuestIdentity restored = (GuestIdentity) input.readObject();
-            assertThat(restored.getGroupId()).isEqualTo(family.getId());
-            assertThat(restored.getEventId()).isEqualTo(event.getId());
+            Authentication restored = (Authentication) input.readObject();
+            GuestIdentity identity = (GuestIdentity) restored.getPrincipal();
+            assertThat(identity.getGroupId()).isEqualTo(family.getId());
+            assertThat(identity.getEventId()).isEqualTo(event.getId());
+            assertThat(restored.isAuthenticated()).isTrue();
+            assertThat(restored.getCredentials()).isNull();
+            assertThat(restored.getAuthorities()).extracting(GrantedAuthority::getAuthority)
+                    .containsExactly("ROLE_GUEST");
         }
+    }
+
+    @Test
+    void authenticatedGuestCannotAccessAdminRoutes() throws Exception {
+        Authentication guest = service.authenticate("A1B2C3");
+
+        mvc.perform(get("/api/admin/events/{eventId}/invite-groups", event.getId()).with(authentication(guest)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/auth/me").with(authentication(guest)))
+                .andExpect(status().isForbidden());
     }
 
     private InviteGroup saveGroup(String name, String code) {
