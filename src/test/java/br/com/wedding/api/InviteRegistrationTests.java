@@ -24,7 +24,7 @@ import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundE
 import br.com.wedding.api.invite.GuestRepository;
 import br.com.wedding.api.invite.InviteCodeGenerator;
 import br.com.wedding.api.invite.InviteGroupRepository;
-import br.com.wedding.api.invite.InviteRegistrationService;
+import br.com.wedding.api.invite.InviteGroupService;
 import br.com.wedding.api.invite.dto.CreateGuestRequest;
 import br.com.wedding.api.invite.dto.CreateInviteGroupRequest;
 import br.com.wedding.api.invite.dto.InviteGroupResponse;
@@ -45,7 +45,7 @@ import tools.jackson.databind.json.JsonMapper;
 class InviteRegistrationTests {
 
     @Autowired
-    private InviteRegistrationService service;
+    private InviteGroupService service;
     @Autowired
     private EventRepository events;
     @MockitoSpyBean

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -75,6 +76,78 @@ class InviteGroupHttpTests {
                 .rsvpDeadline(LocalDate.of(2027, 10, 23))
                 .createdAt(Instant.now())
                 .build()).getId();
+    }
+
+    @Test
+    @WithMockUser(username = "will", roles = "ADMIN")
+    void listsFamiliesAndTheirGuestsInNameOrder() throws Exception {
+        String zuluFamily = REQUEST.replace("Test family", "Zulu family")
+                .replace("Test adult", "Zulu adult").replace("Test child", "Zulu child");
+        String alphaFamily = REQUEST.replace("Test family", "Alpha family")
+                .replace("Test adult", "Zoe adult").replace("Test child", "Ana child");
+        mvc.perform(post(ROUTE, eventId).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(zuluFamily))
+                .andExpect(status().isCreated());
+        mvc.perform(post(ROUTE, eventId).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(alphaFamily))
+                .andExpect(status().isCreated());
+
+        mvc.perform(get(ROUTE, eventId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].groupName").value("Alpha family"))
+                .andExpect(jsonPath("$[0].eventId").value(eventId.toString()))
+                .andExpect(jsonPath("$[0].inviteCode").value(matchesPattern("[A-Z0-9]{6}")))
+                .andExpect(jsonPath("$[0].guests.length()").value(2))
+                .andExpect(jsonPath("$[0].guests[0].name").value("Ana child"))
+                .andExpect(jsonPath("$[0].guests[0].isChild").value(true))
+                .andExpect(jsonPath("$[0].guests[0].rsvpStatus").value("pending"))
+                .andExpect(jsonPath("$[0].guests[1].name").value("Zoe adult"))
+                .andExpect(jsonPath("$[1].groupName").value("Zulu family"))
+                .andExpect(jsonPath("$[1].guests.length()").value(2))
+                .andExpect(jsonPath("$[1].guests[0].name").value("Zulu adult"))
+                .andExpect(jsonPath("$[1].guests[1].name").value("Zulu child"));
+        assertThat(groups.count()).isEqualTo(2);
+        assertThat(guests.count()).isEqualTo(4);
+    }
+
+    @Test
+    @WithMockUser(username = "will", roles = "ADMIN")
+    void returnsEmptyListForEventWithoutFamilies() throws Exception {
+        mvc.perform(get(ROUTE, eventId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    @WithMockUser(username = "will", roles = "ADMIN")
+    void doesNotListFamiliesForMissingEvent() throws Exception {
+        mvc.perform(post(ROUTE, eventId).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(REQUEST))
+                .andExpect(status().isCreated());
+        mvc.perform(get(ROUTE, UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("The event was not found."));
+    }
+
+    @Test
+    @WithMockUser(username = "will", roles = "ADMIN")
+    void rejectsMalformedEventIdOnListing() throws Exception {
+        mvc.perform(get(ROUTE, "invalid-id"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void requiresAuthenticationToList() throws Exception {
+        mvc.perform(get(ROUTE, eventId))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "will", roles = "GUEST")
+    void requiresAdminRoleToList() throws Exception {
+        mvc.perform(get(ROUTE, eventId))
+                .andExpect(status().isForbidden());
     }
 
     @Test

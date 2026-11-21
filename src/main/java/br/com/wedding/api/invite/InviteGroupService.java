@@ -1,7 +1,10 @@
 package br.com.wedding.api.invite;
 
+import static java.util.stream.Collectors.groupingBy;
+
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
@@ -21,12 +24,32 @@ import org.springframework.validation.annotation.Validated;
 @Service
 @Validated
 @RequiredArgsConstructor
-public class InviteRegistrationService {
+public class InviteGroupService {
 
     private final EventRepository events;
     private final InviteGroupRepository groups;
     private final GuestRepository guests;
     private final InviteCodeGenerator codeGenerator;
+
+    @Transactional(readOnly = true)
+    public List<InviteGroupResponse> list(@NotNull UUID eventId) {
+        if (!events.existsById(eventId)) {
+            throw new EventNotFoundException();
+        }
+
+        List<InviteGroup> eventGroups = groups.findAllByEventIdOrderByGroupNameAscIdAsc(eventId);
+        if (eventGroups.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, List<Guest>> guestsByGroup = guests.findAllByGroupEventIdOrderByNameAscIdAsc(eventId)
+                .stream()
+                .collect(groupingBy(guest -> guest.getGroup().getId()));
+
+        return eventGroups.stream()
+                .map(group -> toResponse(group, guestsByGroup.getOrDefault(group.getId(), List.of())))
+                .toList();
+    }
 
     @Transactional
     public InviteGroupResponse create(@NotNull UUID eventId, @NotNull @Valid CreateInviteGroupRequest request) {
