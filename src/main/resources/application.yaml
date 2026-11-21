@@ -22,5 +22,9 @@ server:
         same-site: lax
 
 app:
+  guest-access:
+    max-attempts: 10
+    attempt-window: 15m
+    session-timeout: 30m
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5175}
