@@ -19,6 +19,9 @@ public class GuestAccessProperties {
     @Min(1)
     private int maxAttempts = 10;
 
+    @Min(1)
+    private int challengeAfterFailures = 3;
+
     @NotNull
     @DurationMin(seconds = 1)
     private Duration attemptWindow = Duration.ofMinutes(15);

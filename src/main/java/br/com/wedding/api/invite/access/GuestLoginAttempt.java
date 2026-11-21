@@ -34,6 +34,10 @@ public class GuestLoginAttempt {
     @Column(nullable = false)
     private int attempts;
 
+    @Setter
+    @Column(name = "failed_attempts", nullable = false)
+    private int failedAttempts;
+
     @Version
     @Column(nullable = false)
     private Long version;

@@ -24,6 +24,7 @@ server:
 app:
   guest-access:
     max-attempts: 10
+    challenge-after-failures: 3
     attempt-window: 15m
     session-timeout: 30m
   cors:

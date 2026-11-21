@@ -28,6 +28,7 @@ public class GuestLoginAttemptService {
         if (!now.isBefore(attempt.getWindowStartedAt().plus(properties.getAttemptWindow()))) {
             attempt.setWindowStartedAt(now);
             attempt.setAttempts(0);
+            attempt.setFailedAttempts(0);
         }
         if (attempt.getAttempts() >= properties.getMaxAttempts()) {
             return false;
@@ -36,5 +37,26 @@ public class GuestLoginAttemptService {
         attempt.setAttempts(attempt.getAttempts() + 1);
         attempts.saveAndFlush(attempt);
         return true;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean requiresChallenge(String address) {
+        Instant now = Instant.now();
+        return attempts.findById(address)
+                .filter(attempt -> now.isBefore(attempt.getWindowStartedAt().plus(properties.getAttemptWindow())))
+                .map(attempt -> attempt.getFailedAttempts() >= properties.getChallengeAfterFailures())
+                .orElse(false);
+    }
+
+    @Retryable(includes = OptimisticLockingFailureException.class, maxRetries = 5, delay = 20)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordFailure(String address) {
+        Instant now = Instant.now();
+        attempts.findById(address)
+                .filter(attempt -> now.isBefore(attempt.getWindowStartedAt().plus(properties.getAttemptWindow())))
+                .ifPresent(attempt -> {
+                    attempt.setFailedAttempts(attempt.getFailedAttempts() + 1);
+                    attempts.saveAndFlush(attempt);
+                });
     }
 }
