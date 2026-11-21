@@ -32,7 +32,13 @@ version=$(aws lambda publish-version --function-name "$LAMBDA_FUNCTION" \
   --code-sha256 "$code_hash" --revision-id "$revision" \
   --description "commit $GITHUB_SHA run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT" \
   --query Version --output text)
-aws lambda wait function-active-v2 --function-name "$LAMBDA_FUNCTION" --qualifier "$version"
+if ! aws lambda wait function-active-v2 --function-name "$LAMBDA_FUNCTION" --qualifier "$version"; then
+  echo "::error::Lambda version $version failed to activate. The homolog alias has not been changed."
+  aws lambda get-function-configuration --function-name "$LAMBDA_FUNCTION" --qualifier "$version" \
+    --query '{Version:Version,State:State,StateReason:StateReason,StateReasonCode:StateReasonCode,LastUpdateStatus:LastUpdateStatus,LastUpdateStatusReason:LastUpdateStatusReason}' \
+    --output json
+  exit 1
+fi
 aws lambda get-function-configuration --function-name "$LAMBDA_FUNCTION" --qualifier "$version" \
   --query SnapStart.OptimizationStatus --output text | grep -qx On
 
