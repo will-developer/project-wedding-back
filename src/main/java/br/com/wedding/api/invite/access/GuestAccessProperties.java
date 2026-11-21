@@ -3,6 +3,7 @@ package br.com.wedding.api.invite.access;
 import java.time.Duration;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,10 @@ public class GuestAccessProperties {
 
     @Min(1)
     private int challengeAfterFailures = 3;
+
+    @Valid
+    @NotNull
+    private TurnstileProperties turnstile = new TurnstileProperties();
 
     @NotNull
     @DurationMin(seconds = 1)
