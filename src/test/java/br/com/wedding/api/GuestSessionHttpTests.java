@@ -1,6 +1,10 @@
 package br.com.wedding.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,6 +25,7 @@ import br.com.wedding.api.invite.GuestRepository;
 import br.com.wedding.api.invite.InviteGroup;
 import br.com.wedding.api.invite.InviteGroupRepository;
 import br.com.wedding.api.invite.RsvpStatus;
+import br.com.wedding.api.invite.access.TurnstileVerifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,11 +35,13 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.databind.json.JsonMapper;
 
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
-        "spring.flyway.enabled=true", "server.servlet.session.cookie.secure=false"
+        "spring.flyway.enabled=true", "server.servlet.session.cookie.secure=false",
+        "app.guest-access.turnstile.site-key=test-site-key"
 })
 class GuestSessionHttpTests {
 
@@ -56,6 +63,8 @@ class GuestSessionHttpTests {
     private AdminAccountRepository accounts;
     @Autowired
     private PasswordEncoder passwords;
+    @MockitoBean
+    private TurnstileVerifier turnstile;
 
     private String cookie;
     private UUID eventId;
@@ -65,6 +74,8 @@ class GuestSessionHttpTests {
     @BeforeEach
     void prepareFamilies() {
         cleanData();
+        when(turnstile.isConfigured()).thenReturn(true);
+        when(turnstile.verify(any())).thenAnswer(invocation -> "test-token".equals(invocation.getArgument(0)));
         cookie = null;
         accounts.saveAndFlush(new AdminAccount("will", passwords.encode(ADMIN_PASSWORD), Instant.now()));
         Event event = events.saveAndFlush(Event.builder()
@@ -198,7 +209,7 @@ class GuestSessionHttpTests {
     @Test
     void rejectsOversizedAndNonJsonLoginPayloads() throws Exception {
         String token = csrf();
-        assertThat(send("POST", "/api/guest/login", "{\"code\":\"" + "A".repeat(600) + "\"}", token).statusCode())
+        assertThat(send("POST", "/api/guest/login", "{\"code\":\"" + "A".repeat(5000) + "\"}", token).statusCode())
                 .isEqualTo(400);
         HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/guest/login"))
                 .header("Cookie", cookie).header("X-CSRF-TOKEN", token)
@@ -237,7 +248,62 @@ class GuestSessionHttpTests {
     }
 
     private HttpResponse<String> login(String code, String token) throws Exception {
-        return send("POST", "/api/guest/login", json.writeValueAsString(Map.of("code", code)), token);
+        return send("POST", "/api/guest/login",
+                json.writeValueAsString(Map.of("code", code, "turnstileToken", "test-token")), token);
+    }
+
+    @Test
+    void threeFailedCodesRequireTurnstileEvenWithANewCookie() throws Exception {
+        String token = csrf();
+        for (int failure = 1; failure <= 3; failure++) {
+            HttpResponse<String> response = send("POST", "/api/guest/login", "{\"code\":\"ZZZZZZ\"}", token);
+            assertThat(response.statusCode()).isEqualTo(401);
+            assertThat(json.readTree(response.body()).path("turnstileRequired").asBoolean()).isEqualTo(failure == 3);
+        }
+        verify(turnstile, never()).verify(any());
+
+        cookie = null;
+        token = csrf();
+        HttpResponse<String> missingChallenge = send("POST", "/api/guest/login", "{\"code\":\"A1B2C3\"}", token);
+        assertThat(missingChallenge.statusCode()).isEqualTo(403);
+        var body = json.readTree(missingChallenge.body());
+        assertThat(body.path("code").asText()).isEqualTo("TURNSTILE_REQUIRED");
+        assertThat(body.path("siteKey").asText()).isEqualTo("test-site-key");
+        assertThat(body.path("action").asText()).isEqualTo("guest-login");
+        assertThat(send("GET", "/api/guest/invitation", null, null).statusCode()).isEqualTo(401);
+
+        assertThat(send("POST", "/api/guest/login",
+                "{\"code\":\"A1B2C3\",\"turnstileToken\":\"bad-token\"}", token).statusCode()).isEqualTo(403);
+        assertThat(login("A1B2C3", token).statusCode()).isEqualTo(204);
+        assertThat(send("GET", "/api/guest/invitation", null, null).statusCode()).isEqualTo(200);
+        assertThat(send("POST", "/api/guest/login", "{\"code\":\"A1B2C3\"}", csrf()).statusCode()).isEqualTo(403);
+    }
+
+    @Test
+    void missingTurnstileConfigurationDoesNotBypassChallenge() throws Exception {
+        when(turnstile.isConfigured()).thenReturn(false);
+        String token = csrf();
+        for (int failure = 1; failure <= 2; failure++) {
+            assertThat(login("ZZZZZZ", token).statusCode()).isEqualTo(401);
+        }
+        HttpResponse<String> response = login("ZZZZZZ", token);
+        assertThat(response.statusCode()).isEqualTo(503);
+        assertThat(json.readTree(response.body()).path("code").asText()).isEqualTo("TURNSTILE_UNAVAILABLE");
+        assertThat(send("GET", "/api/guest/invitation", null, null).statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void unavailableTurnstileDoesNotAuthenticateValidInvitation() throws Exception {
+        String token = csrf();
+        for (int failure = 1; failure <= 3; failure++) {
+            assertThat(login("ZZZZZZ", token).statusCode()).isEqualTo(401);
+        }
+        when(turnstile.verify(any())).thenThrow(
+                new org.springframework.security.authentication.AuthenticationServiceException("Unavailable"));
+        HttpResponse<String> response = login("A1B2C3", token);
+        assertThat(response.statusCode()).isEqualTo(503);
+        assertThat(json.readTree(response.body()).path("code").asText()).isEqualTo("LOGIN_UNAVAILABLE");
+        assertThat(send("GET", "/api/guest/invitation", null, null).statusCode()).isEqualTo(401);
     }
 
     private HttpResponse<String> send(String method, String path, String body, String token) throws Exception {

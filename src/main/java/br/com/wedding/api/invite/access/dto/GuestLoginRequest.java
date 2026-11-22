@@ -8,4 +8,6 @@ import lombok.Setter;
 public class GuestLoginRequest {
 
     private String code;
+
+    private String turnstileToken;
 }

@@ -28,4 +28,11 @@ public final class ApplicationExceptions {
         }
     }
 
+    public static class GuestTurnstileRequiredException extends AuthenticationException {
+
+        public GuestTurnstileRequiredException() {
+            super("Turnstile verification is required.");
+        }
+    }
+
 }

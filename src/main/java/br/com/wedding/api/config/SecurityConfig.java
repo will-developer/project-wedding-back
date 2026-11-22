@@ -11,6 +11,7 @@ import br.com.wedding.api.invite.access.GuestAccessProperties;
 import br.com.wedding.api.invite.access.GuestAccessService;
 import br.com.wedding.api.invite.access.GuestLoginAttemptService;
 import br.com.wedding.api.invite.access.GuestLoginFilter;
+import br.com.wedding.api.invite.access.TurnstileVerifier;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -72,9 +73,10 @@ public class SecurityConfig {
     @Bean
     public GuestLoginFilter guestLoginFilter(GuestAccessService access, GuestLoginAttemptService attempts,
             GuestAccessProperties properties, JsonMapper json, SecurityContextRepository contexts,
-            SessionAuthenticationStrategy guestSessionAuthenticationStrategy) {
+            SessionAuthenticationStrategy guestSessionAuthenticationStrategy, TurnstileVerifier turnstile) {
         GuestLoginFilter filter = new GuestLoginFilter(
-                authentication -> access.authenticate((String) authentication.getCredentials()), attempts, properties, json);
+                authentication -> access.authenticate((String) authentication.getCredentials()),
+                attempts, properties, json, turnstile);
         filter.setSessionAuthenticationStrategy(guestSessionAuthenticationStrategy);
         filter.setSecurityContextRepository(contexts);
         return filter;

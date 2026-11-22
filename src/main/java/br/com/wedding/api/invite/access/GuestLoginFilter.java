@@ -9,6 +9,8 @@ import java.io.IOException;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestLoginLimitException;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestLoginPayloadException;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestTurnstileRequiredException;
+import br.com.wedding.api.invite.access.dto.GuestLoginErrorResponse;
 import br.com.wedding.api.invite.access.dto.GuestLoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,6 +21,7 @@ import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -30,18 +33,20 @@ import tools.jackson.databind.json.JsonMapper;
 @NullMarked
 public class GuestLoginFilter extends AbstractAuthenticationProcessingFilter {
 
-    private static final int MAX_BODY_BYTES = 512;
+    private static final int MAX_BODY_BYTES = 4096;
 
     private final GuestLoginAttemptService attempts;
     private final GuestAccessProperties properties;
     private final JsonMapper json;
+    private final TurnstileVerifier turnstile;
 
     public GuestLoginFilter(AuthenticationManager manager, GuestLoginAttemptService attempts,
-            GuestAccessProperties properties, JsonMapper json) {
+            GuestAccessProperties properties, JsonMapper json, TurnstileVerifier turnstile) {
         super(PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/guest/login"), manager);
         this.attempts = attempts;
         this.properties = properties;
         this.json = json;
+        this.turnstile = turnstile;
         setAuthenticationSuccessHandler(this::onSuccess);
         setAuthenticationFailureHandler(this::onFailure);
     }
@@ -66,6 +71,9 @@ public class GuestLoginFilter extends AbstractAuthenticationProcessingFilter {
             if (body == null) {
                 throw new GuestLoginPayloadException();
             }
+            if (attempts.requiresChallenge(request.getRemoteAddr()) && !turnstile.verify(body.getTurnstileToken())) {
+                throw new GuestTurnstileRequiredException();
+            }
             return getAuthenticationManager().authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated("guest", body.getCode()));
         } catch (JacksonException | InvalidMediaTypeException exception) {
@@ -81,17 +89,50 @@ public class GuestLoginFilter extends AbstractAuthenticationProcessingFilter {
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
-    private void onFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) {
-        response.setHeader(CACHE_CONTROL, "no-store");
-        if (exception instanceof GuestLoginLimitException) {
-            response.setHeader(RETRY_AFTER, Long.toString(properties.getAttemptWindow().toSeconds()));
-            response.setStatus(TOO_MANY_REQUESTS.value());
-        } else if (exception instanceof GuestLoginPayloadException) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        } else if (exception instanceof AuthenticationServiceException) {
-            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-        } else {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    private void onFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
+            throws IOException {
+        int status = HttpServletResponse.SC_UNAUTHORIZED;
+        String code = "INVALID_INVITATION_CODE";
+        boolean challengeRequired = false;
+        try {
+            if (exception instanceof BadCredentialsException) {
+                attempts.recordFailure(request.getRemoteAddr());
+                challengeRequired = attempts.requiresChallenge(request.getRemoteAddr());
+            } else if (exception instanceof GuestTurnstileRequiredException) {
+                status = HttpServletResponse.SC_FORBIDDEN;
+                code = "TURNSTILE_REQUIRED";
+                challengeRequired = true;
+            } else if (exception instanceof GuestLoginLimitException) {
+                status = TOO_MANY_REQUESTS.value();
+                code = "TOO_MANY_ATTEMPTS";
+                response.setHeader(RETRY_AFTER, Long.toString(properties.getAttemptWindow().toSeconds()));
+            } else if (exception instanceof GuestLoginPayloadException) {
+                status = HttpServletResponse.SC_BAD_REQUEST;
+                code = "INVALID_LOGIN_PAYLOAD";
+            } else if (exception instanceof AuthenticationServiceException) {
+                status = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+                code = "LOGIN_UNAVAILABLE";
+            }
+            if (challengeRequired && !turnstile.isConfigured()) {
+                writeError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "TURNSTILE_UNAVAILABLE", false);
+                return;
+            }
+            writeError(response, status, code, challengeRequired);
+        } catch (DataAccessException unavailable) {
+            writeError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "LOGIN_UNAVAILABLE", false);
         }
+    }
+
+    private void writeError(HttpServletResponse response, int status, String code, boolean challengeRequired)
+            throws IOException {
+        GuestLoginErrorResponse body = GuestLoginErrorResponse.builder()
+                .code(code).turnstileRequired(challengeRequired)
+                .siteKey(challengeRequired ? properties.getTurnstile().getSiteKey() : null)
+                .action(challengeRequired ? properties.getTurnstile().getAction() : null)
+                .build();
+        response.setStatus(status);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setHeader(CACHE_CONTROL, "no-store");
+        response.getOutputStream().write(json.writeValueAsBytes(body));
     }
 }
