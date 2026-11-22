@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.time.Instant;
 import java.sql.Timestamp;
 
-import br.com.wedding.api.invite.access.GuestLoginAttemptService;
+import br.com.wedding.api.guest.access.GuestLoginAttemptService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

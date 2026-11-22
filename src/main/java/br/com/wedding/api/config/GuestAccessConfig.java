@@ -1,6 +1,6 @@
 package br.com.wedding.api.config;
 
-import br.com.wedding.api.invite.access.GuestAccessProperties;
+import br.com.wedding.api.guest.access.GuestAccessProperties;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

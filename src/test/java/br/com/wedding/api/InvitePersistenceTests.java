@@ -8,11 +8,11 @@ import java.util.UUID;
 
 import br.com.wedding.api.event.Event;
 import br.com.wedding.api.event.EventRepository;
-import br.com.wedding.api.invite.Guest;
-import br.com.wedding.api.invite.GuestRepository;
-import br.com.wedding.api.invite.InviteGroup;
-import br.com.wedding.api.invite.InviteGroupRepository;
-import br.com.wedding.api.invite.RsvpStatus;
+import br.com.wedding.api.guest.Guest;
+import br.com.wedding.api.guest.GuestRepository;
+import br.com.wedding.api.guest.InviteGroup;
+import br.com.wedding.api.guest.InviteGroupRepository;
+import br.com.wedding.api.guest.RsvpStatus;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

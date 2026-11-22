@@ -1,4 +1,4 @@
-package br.com.wedding.api.invite;
+package br.com.wedding.api.guest;
 
 import jakarta.persistence.EnumeratedValue;
 import lombok.Getter;

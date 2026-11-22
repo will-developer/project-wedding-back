@@ -1,6 +1,7 @@
-package br.com.wedding.api.invite.access;
+package br.com.wedding.api.guest.access;
 
-import br.com.wedding.api.invite.access.dto.GuestInvitationResponse;
+import br.com.wedding.api.guest.GuestService;
+import br.com.wedding.api.guest.access.dto.GuestInvitationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class GuestInvitationController {
 
-    private final GuestAccessService guestAccessService;
+    private final GuestService guestService;
 
     @GetMapping("/invitation")
     public ResponseEntity<GuestInvitationResponse> invitation(@AuthenticationPrincipal GuestIdentity identity) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(guestAccessService.invitation(identity));
+                .body(guestService.invitation(identity));
     }
 }

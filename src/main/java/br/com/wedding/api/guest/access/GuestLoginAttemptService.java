@@ -1,4 +1,4 @@
-package br.com.wedding.api.invite.access;
+package br.com.wedding.api.guest.access;
 
 import java.time.Instant;
 

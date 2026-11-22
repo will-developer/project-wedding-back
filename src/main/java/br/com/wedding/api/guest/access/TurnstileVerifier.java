@@ -1,9 +1,9 @@
-package br.com.wedding.api.invite.access;
+package br.com.wedding.api.guest.access;
 
 import java.util.Map;
 import java.util.Set;
 
-import br.com.wedding.api.invite.access.dto.TurnstileVerificationResponse;
+import br.com.wedding.api.guest.access.dto.TurnstileVerificationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationServiceException;

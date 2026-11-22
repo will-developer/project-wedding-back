@@ -1,4 +1,4 @@
-package br.com.wedding.api.invite.access.dto;
+package br.com.wedding.api.guest.access.dto;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package br.com.wedding.api.invite;
+package br.com.wedding.api.guest;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -10,10 +10,10 @@ import java.util.UUID;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
 import br.com.wedding.api.event.Event;
 import br.com.wedding.api.event.EventRepository;
-import br.com.wedding.api.invite.dto.CreateGuestRequest;
-import br.com.wedding.api.invite.dto.CreateInviteGroupRequest;
-import br.com.wedding.api.invite.dto.GuestResponse;
-import br.com.wedding.api.invite.dto.InviteGroupResponse;
+import br.com.wedding.api.guest.dto.CreateGuestRequest;
+import br.com.wedding.api.guest.dto.CreateInviteGroupRequest;
+import br.com.wedding.api.guest.dto.GuestResponse;
+import br.com.wedding.api.guest.dto.InviteGroupResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;

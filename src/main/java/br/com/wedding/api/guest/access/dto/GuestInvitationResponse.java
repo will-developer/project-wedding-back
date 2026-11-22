@@ -1,8 +1,8 @@
-package br.com.wedding.api.invite.access.dto;
+package br.com.wedding.api.guest.access.dto;
 
 import java.util.List;
 
-import br.com.wedding.api.invite.dto.GuestResponse;
+import br.com.wedding.api.guest.dto.GuestResponse;
 import lombok.Builder;
 import lombok.Getter;
 

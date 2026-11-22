@@ -1,4 +1,4 @@
-package br.com.wedding.api.invite;
+package br.com.wedding.api.guest;
 
 import java.time.Instant;
 import java.util.UUID;

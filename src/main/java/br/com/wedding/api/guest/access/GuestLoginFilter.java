@@ -1,4 +1,4 @@
-package br.com.wedding.api.invite.access;
+package br.com.wedding.api.guest.access;
 
 import static java.lang.Math.toIntExact;
 import static org.springframework.http.HttpHeaders.CACHE_CONTROL;
@@ -10,8 +10,8 @@ import java.io.IOException;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestLoginLimitException;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestLoginPayloadException;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestTurnstileRequiredException;
-import br.com.wedding.api.invite.access.dto.GuestLoginErrorResponse;
-import br.com.wedding.api.invite.access.dto.GuestLoginRequest;
+import br.com.wedding.api.guest.access.dto.GuestLoginErrorResponse;
+import br.com.wedding.api.guest.access.dto.GuestLoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NullMarked;

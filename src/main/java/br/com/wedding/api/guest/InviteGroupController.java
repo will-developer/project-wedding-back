@@ -1,10 +1,10 @@
-package br.com.wedding.api.invite;
+package br.com.wedding.api.guest;
 
 import java.util.UUID;
 import java.util.List;
 
-import br.com.wedding.api.invite.dto.CreateInviteGroupRequest;
-import br.com.wedding.api.invite.dto.InviteGroupResponse;
+import br.com.wedding.api.guest.dto.CreateInviteGroupRequest;
+import br.com.wedding.api.guest.dto.InviteGroupResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
