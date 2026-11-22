@@ -6,7 +6,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.ReceptionDetailsRequiredException;
-import br.com.wedding.api.event.dto.CreateEventRequest;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
+import br.com.wedding.api.event.dto.EventRequest;
 import br.com.wedding.api.event.dto.EventResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,11 +20,8 @@ public class EventService {
     private final EventRepository events;
 
     @Transactional
-    public EventResponse create(CreateEventRequest request, boolean receptionAtCeremonyLocation) {
-        if (!receptionAtCeremonyLocation
-                && (!hasText(request.getReceptionLocation()) || !hasText(request.getReceptionMapsUrl()))) {
-            throw new ReceptionDetailsRequiredException();
-        }
+    public EventResponse create(EventRequest request, boolean receptionAtCeremonyLocation) {
+        validateReception(request, receptionAtCeremonyLocation);
 
         Event event = Event.builder()
                 .id(UUID.randomUUID())
@@ -37,6 +35,32 @@ public class EventService {
                 .createdAt(Instant.now())
                 .build();
         events.saveAndFlush(event);
+        return toResponse(event);
+    }
+
+    @Transactional
+    public EventResponse update(UUID eventId, EventRequest request, boolean receptionAtCeremonyLocation) {
+        Event event = events.findById(eventId).orElseThrow(EventNotFoundException::new);
+        validateReception(request, receptionAtCeremonyLocation);
+        event.setTitle(request.getTitle().strip());
+        event.setEventDate(request.getEventDate());
+        event.setCeremonyLocation(request.getCeremonyLocation().strip());
+        event.setCeremonyMapsUrl(request.getCeremonyMapsUrl());
+        event.setReceptionLocation(receptionAtCeremonyLocation ? null : request.getReceptionLocation().strip());
+        event.setReceptionMapsUrl(receptionAtCeremonyLocation ? null : request.getReceptionMapsUrl());
+        event.setRsvpDeadline(request.getRsvpDeadline());
+        events.saveAndFlush(event);
+        return toResponse(event);
+    }
+
+    private void validateReception(EventRequest request, boolean receptionAtCeremonyLocation) {
+        if (!receptionAtCeremonyLocation
+                && (!hasText(request.getReceptionLocation()) || !hasText(request.getReceptionMapsUrl()))) {
+            throw new ReceptionDetailsRequiredException();
+        }
+    }
+
+    private EventResponse toResponse(Event event) {
         return EventResponse.builder()
                 .id(event.getId())
                 .title(event.getTitle())

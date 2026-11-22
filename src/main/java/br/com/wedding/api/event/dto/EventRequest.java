@@ -12,7 +12,7 @@ import org.hibernate.validator.constraints.URL;
 
 @Getter
 @Setter
-public class CreateEventRequest {
+public class EventRequest {
 
     @NotBlank
     @Size(max = 160)
