@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestNotFoundException;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.RsvpDeadlinePassedException;
+import br.com.wedding.api.event.Event;
+import br.com.wedding.api.guest.access.dto.GuestEventResponse;
 import br.com.wedding.api.guest.access.dto.GuestInvitationResponse;
 import br.com.wedding.api.guest.access.GuestIdentity;
 import br.com.wedding.api.guest.dto.GuestResponse;
@@ -31,8 +33,18 @@ public class GuestService {
         InviteGroup group = groups.findById(identity.getGroupId())
                 .filter(invite -> invite.getEvent().getId().equals(identity.getEventId()))
                 .orElseThrow(() -> new BadCredentialsException("Invalid invitation session."));
+        Event event = group.getEvent();
 
         return GuestInvitationResponse.builder()
+                .event(GuestEventResponse.builder()
+                        .title(event.getTitle())
+                        .eventDate(event.getEventDate())
+                        .ceremonyLocation(event.getCeremonyLocation())
+                        .receptionLocation(event.getReceptionLocation())
+                        .ceremonyMapsUrl(event.getCeremonyMapsUrl())
+                        .receptionMapsUrl(event.getReceptionMapsUrl())
+                        .rsvpDeadline(event.getRsvpDeadline())
+                        .build())
                 .groupName(group.getGroupName())
                 .guests(guests.findAllByGroupIdOrderByNameAscIdAsc(group.getId()).stream()
                         .map(this::toResponse)

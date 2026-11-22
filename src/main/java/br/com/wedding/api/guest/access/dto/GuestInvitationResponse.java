@@ -10,6 +10,8 @@ import lombok.Getter;
 @Builder
 public class GuestInvitationResponse {
 
+    private final GuestEventResponse event;
+
     private final String groupName;
 
     private final List<GuestResponse> guests;
