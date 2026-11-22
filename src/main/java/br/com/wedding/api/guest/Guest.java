@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -44,9 +45,11 @@ public class Guest {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "rsvp_status", nullable = false, columnDefinition = "rsvp_status")
+    @Setter
     private RsvpStatus rsvpStatus;
 
     @Column(name = "responded_at")
+    @Setter
     private Instant respondedAt;
 
 }

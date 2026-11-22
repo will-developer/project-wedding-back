@@ -14,6 +14,20 @@ public final class ApplicationExceptions {
         }
     }
 
+    public static class GuestNotFoundException extends RuntimeException {
+
+        public GuestNotFoundException() {
+            super("The guest was not found in this invitation.");
+        }
+    }
+
+    public static class RsvpDeadlinePassedException extends RuntimeException {
+
+        public RsvpDeadlinePassedException() {
+            super("The RSVP deadline has passed.");
+        }
+    }
+
     public static class GuestLoginLimitException extends AuthenticationException {
 
         public GuestLoginLimitException() {
