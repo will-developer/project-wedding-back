@@ -4,6 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestNotFoundException;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.RsvpDeadlinePassedException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(EventNotFoundException.class)
     public ProblemDetail eventNotFound(EventNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(GuestNotFoundException.class)
+    public ProblemDetail guestNotFound(GuestNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(RsvpDeadlinePassedException.class)
+    public ProblemDetail rsvpDeadlinePassed(RsvpDeadlinePassedException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
