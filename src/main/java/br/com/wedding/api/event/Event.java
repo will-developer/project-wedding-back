@@ -34,13 +34,13 @@ public class Event {
     @Column(name = "ceremony_location", nullable = false, length = 200)
     private String ceremonyLocation;
 
-    @Column(name = "reception_location", nullable = false, length = 200)
+    @Column(name = "reception_location", length = 200)
     private String receptionLocation;
 
     @Column(name = "ceremony_maps_url", nullable = false, length = 2048)
     private String ceremonyMapsUrl;
 
-    @Column(name = "reception_maps_url", nullable = false, length = 2048)
+    @Column(name = "reception_maps_url", length = 2048)
     private String receptionMapsUrl;
 
     @Column(name = "rsvp_deadline", nullable = false)

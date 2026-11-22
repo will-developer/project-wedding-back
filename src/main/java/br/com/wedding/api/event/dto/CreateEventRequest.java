@@ -25,7 +25,6 @@ public class CreateEventRequest {
     @Size(max = 200)
     private String ceremonyLocation;
 
-    @NotBlank
     @Size(max = 200)
     private String receptionLocation;
 
@@ -34,7 +33,6 @@ public class CreateEventRequest {
     @URL(protocol = "https")
     private String ceremonyMapsUrl;
 
-    @NotBlank
     @Size(max = 2048)
     @URL(protocol = "https")
     private String receptionMapsUrl;
