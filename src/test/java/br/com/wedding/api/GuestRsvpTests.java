@@ -18,6 +18,7 @@ import br.com.wedding.api.guest.Guest;
 import br.com.wedding.api.guest.GuestRepository;
 import br.com.wedding.api.guest.InviteGroup;
 import br.com.wedding.api.guest.InviteGroupRepository;
+import br.com.wedding.api.guest.InviteGroupService;
 import br.com.wedding.api.guest.RsvpStatus;
 import br.com.wedding.api.guest.access.GuestIdentity;
 import br.com.wedding.api.guest.dto.GuestResponse;
@@ -42,6 +43,8 @@ class GuestRsvpTests {
 
     @Autowired
     private GuestService service;
+    @Autowired
+    private InviteGroupService inviteGroups;
     @Autowired
     private EventRepository events;
     @Autowired
@@ -154,6 +157,48 @@ class GuestRsvpTests {
         assertThatThrownBy(() -> service.respond(identity, guest.getId(), true))
                 .isInstanceOf(RsvpDeadlinePassedException.class);
         assertThat(guest.getRsvpStatus()).isEqualTo(RsvpStatus.PENDING);
+        assertThat(guest.getRespondedAt()).isNull();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "2027-10-23T15:00:00Z,PENDING,pending",
+            "2027-10-24T02:59:59Z,PENDING,pending",
+            "2027-10-24T03:00:00Z,PENDING,expired",
+            "2027-10-24T03:00:00Z,CONFIRMED,confirmed",
+            "2027-10-24T03:00:00Z,DECLINED,declined"
+    })
+    void guestAndAdminSeeEffectiveStatusWithoutChangingStoredAnswer(String instant, RsvpStatus stored, String expected) {
+        guest.setRsvpStatus(stored);
+        Instant respondedAt = stored == RsvpStatus.PENDING ? null : RESPONSE_TIME;
+        guest.setRespondedAt(respondedAt);
+        guests.flush();
+        when(clock.instant()).thenReturn(Instant.parse(instant));
+
+        GuestResponse guestView = service.invitation(identity).getGuests().getFirst();
+        GuestResponse adminView = inviteGroups.list(identity.getEventId()).stream()
+                .flatMap(group -> group.getGuests().stream())
+                .filter(response -> response.getId().equals(guest.getId()))
+                .findFirst().orElseThrow();
+
+        assertThat(guestView.getRsvpStatus()).isEqualTo(expected);
+        assertThat(adminView.getRsvpStatus()).isEqualTo(expected);
+        assertThat(guestView.getRespondedAt()).isEqualTo(respondedAt);
+        assertThat(adminView.getRespondedAt()).isEqualTo(respondedAt);
+        guests.flush();
+        entityManager.clear();
+        Guest saved = guests.findById(guest.getId()).orElseThrow();
+        assertThat(saved.getRsvpStatus()).isEqualTo(stored);
+        assertThat(saved.getRespondedAt()).isEqualTo(respondedAt);
+    }
+
+    @Test
+    void pendingAnswerAppearsPendingAgainWhenDeadlineIsNoLongerPassed() {
+        when(clock.instant()).thenReturn(Instant.parse("2027-10-24T03:00:00Z"));
+        assertThat(service.invitation(identity).getGuests().getFirst().getRsvpStatus()).isEqualTo("expired");
+
+        when(clock.instant()).thenReturn(RESPONSE_TIME);
+        assertThat(service.invitation(identity).getGuests().getFirst().getRsvpStatus()).isEqualTo("pending");
         assertThat(guest.getRespondedAt()).isNull();
     }
 

@@ -30,6 +30,7 @@ public class InviteGroupService {
     private final InviteGroupRepository groups;
     private final GuestRepository guests;
     private final InviteCodeGenerator codeGenerator;
+    private final GuestService guestService;
 
     @Transactional(readOnly = true)
     public List<InviteGroupResponse> list(@NotNull UUID eventId) {
@@ -99,7 +100,7 @@ public class InviteGroupService {
                 .id(guest.getId())
                 .name(guest.getName())
                 .child(guest.isChild())
-                .rsvpStatus(guest.getRsvpStatus().getDatabaseValue())
+                .rsvpStatus(guestService.resolveRsvpStatus(guest).getDatabaseValue())
                 .respondedAt(guest.getRespondedAt())
                 .build();
     }

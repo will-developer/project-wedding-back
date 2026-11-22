@@ -60,12 +60,20 @@ public class GuestService {
         return toResponse(guest);
     }
 
+    public RsvpStatus resolveRsvpStatus(Guest guest) {
+        if (guest.getRsvpStatus() == RsvpStatus.PENDING
+                && LocalDate.now(clock).isAfter(guest.getGroup().getEvent().getRsvpDeadline())) {
+            return RsvpStatus.EXPIRED;
+        }
+        return guest.getRsvpStatus();
+    }
+
     private GuestResponse toResponse(Guest guest) {
         return GuestResponse.builder()
                 .id(guest.getId())
                 .name(guest.getName())
                 .child(guest.isChild())
-                .rsvpStatus(guest.getRsvpStatus().getDatabaseValue())
+                .rsvpStatus(resolveRsvpStatus(guest).getDatabaseValue())
                 .respondedAt(guest.getRespondedAt())
                 .build();
     }

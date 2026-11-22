@@ -9,7 +9,8 @@ import lombok.RequiredArgsConstructor;
 public enum RsvpStatus {
     PENDING("pending"),
     CONFIRMED("confirmed"),
-    DECLINED("declined");
+    DECLINED("declined"),
+    EXPIRED("expired");
 
     @EnumeratedValue
     private final String databaseValue;

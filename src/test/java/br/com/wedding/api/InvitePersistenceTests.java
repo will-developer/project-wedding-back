@@ -91,5 +91,13 @@ class InvitePersistenceTests {
         entityManager.clear();
         assertThat(guests.findById(adult.getId()).orElseThrow().getRsvpStatus()).isEqualTo(RsvpStatus.CONFIRMED);
         assertThat(guests.findById(child.getId()).orElseThrow().getRsvpStatus()).isEqualTo(RsvpStatus.DECLINED);
+
+        Guest expired = guests.findById(child.getId()).orElseThrow();
+        expired.setRsvpStatus(RsvpStatus.EXPIRED);
+        guests.saveAndFlush(expired);
+        entityManager.clear();
+        assertThat(jdbc.queryForObject("SELECT rsvp_status::text FROM guest WHERE id = ?",
+                String.class, child.getId())).isEqualTo("expired");
+        assertThat(guests.findById(child.getId()).orElseThrow().getRsvpStatus()).isEqualTo(RsvpStatus.EXPIRED);
     }
 }

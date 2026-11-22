@@ -6,6 +6,8 @@ import static org.springframework.security.core.authority.AuthorityUtils.createA
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -142,6 +144,10 @@ class GuestRsvpHttpTests {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"attending\":true}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("The RSVP deadline has passed."));
+        mvc.perform(get("/api/guest/invitation").with(authentication(guestAuthentication)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.guests[0].rsvpStatus").value("expired"))
+                .andExpect(jsonPath("$.guests[0].respondedAt").value(nullValue()));
         assertUnanswered();
     }
 
