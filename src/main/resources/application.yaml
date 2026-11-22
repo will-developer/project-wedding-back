@@ -22,5 +22,15 @@ server:
         same-site: lax
 
 app:
+  guest-access:
+    max-attempts: 10
+    challenge-after-failures: 3
+    attempt-window: 15m
+    session-timeout: 30m
+    turnstile:
+      site-key: ${TURNSTILE_SITE_KEY:}
+      secret-key: ${TURNSTILE_SECRET_KEY:}
+      expected-hostname: ${TURNSTILE_EXPECTED_HOSTNAME:}
+      action: guest-login
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5175}
