@@ -81,7 +81,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ProblemDetail invalidJson() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-                "Invalid JSON or field format. Use ISO-8601 dates with an offset for eventDate.");
+                "Invalid JSON or field format.");
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
