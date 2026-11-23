@@ -3,6 +3,7 @@ package br.com.wedding.api.event;
 import static org.springframework.util.StringUtils.hasText;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.ReceptionDetailsRequiredException;
@@ -18,6 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class EventService {
 
     private final EventRepository events;
+
+    @Transactional(readOnly = true)
+    public List<EventResponse> list() {
+        return events.findAll().stream().map(this::toResponse).toList();
+    }
 
     @Transactional
     public EventResponse create(EventRequest request, boolean receptionAtCeremonyLocation) {
