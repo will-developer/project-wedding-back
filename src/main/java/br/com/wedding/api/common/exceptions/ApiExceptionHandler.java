@@ -4,6 +4,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestNotFoundException;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.RsvpDeadlinePassedException;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.ReceptionDetailsRequiredException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -27,6 +30,21 @@ public class ApiExceptionHandler {
     @ExceptionHandler(EventNotFoundException.class)
     public ProblemDetail eventNotFound(EventNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(ReceptionDetailsRequiredException.class)
+    public ProblemDetail receptionDetailsRequired(ReceptionDetailsRequiredException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(GuestNotFoundException.class)
+    public ProblemDetail guestNotFound(GuestNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(RsvpDeadlinePassedException.class)
+    public ProblemDetail rsvpDeadlinePassed(RsvpDeadlinePassedException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -69,6 +87,6 @@ public class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ProblemDetail invalidParameter() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-                "Invalid URL parameter. Use a valid UUID for identifiers.");
+                "Invalid URL parameter. Check identifier and parameter formats.");
     }
 }

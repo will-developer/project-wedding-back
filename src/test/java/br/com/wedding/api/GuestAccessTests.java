@@ -16,10 +16,10 @@ import java.util.UUID;
 
 import br.com.wedding.api.event.Event;
 import br.com.wedding.api.event.EventRepository;
-import br.com.wedding.api.invite.InviteGroup;
-import br.com.wedding.api.invite.InviteGroupRepository;
-import br.com.wedding.api.invite.access.GuestAccessService;
-import br.com.wedding.api.invite.access.GuestIdentity;
+import br.com.wedding.api.guest.InviteGroup;
+import br.com.wedding.api.guest.InviteGroupRepository;
+import br.com.wedding.api.guest.access.GuestAccessService;
+import br.com.wedding.api.guest.access.GuestIdentity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

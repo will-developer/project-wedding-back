@@ -6,8 +6,8 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 
-import br.com.wedding.api.invite.access.GuestAccessProperties;
-import br.com.wedding.api.invite.access.TurnstileVerifier;
+import br.com.wedding.api.guest.access.GuestAccessProperties;
+import br.com.wedding.api.guest.access.TurnstileVerifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

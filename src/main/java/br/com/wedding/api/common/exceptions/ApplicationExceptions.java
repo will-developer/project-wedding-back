@@ -14,6 +14,27 @@ public final class ApplicationExceptions {
         }
     }
 
+    public static class ReceptionDetailsRequiredException extends RuntimeException {
+
+        public ReceptionDetailsRequiredException() {
+            super("Reception location and Maps URL are required when the reception is at a different location.");
+        }
+    }
+
+    public static class GuestNotFoundException extends RuntimeException {
+
+        public GuestNotFoundException() {
+            super("The guest was not found in this invitation.");
+        }
+    }
+
+    public static class RsvpDeadlinePassedException extends RuntimeException {
+
+        public RsvpDeadlinePassedException() {
+            super("The RSVP deadline has passed.");
+        }
+    }
+
     public static class GuestLoginLimitException extends AuthenticationException {
 
         public GuestLoginLimitException() {

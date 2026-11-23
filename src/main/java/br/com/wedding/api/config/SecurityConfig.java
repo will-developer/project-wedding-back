@@ -7,11 +7,11 @@ import java.util.List;
 
 import br.com.wedding.api.admin.ActiveAdminSessionFilter;
 import br.com.wedding.api.admin.AdminAccountRepository;
-import br.com.wedding.api.invite.access.GuestAccessProperties;
-import br.com.wedding.api.invite.access.GuestAccessService;
-import br.com.wedding.api.invite.access.GuestLoginAttemptService;
-import br.com.wedding.api.invite.access.GuestLoginFilter;
-import br.com.wedding.api.invite.access.TurnstileVerifier;
+import br.com.wedding.api.guest.access.GuestAccessProperties;
+import br.com.wedding.api.guest.access.GuestAccessService;
+import br.com.wedding.api.guest.access.GuestLoginAttemptService;
+import br.com.wedding.api.guest.access.GuestLoginFilter;
+import br.com.wedding.api.guest.access.TurnstileVerifier;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

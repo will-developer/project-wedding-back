@@ -8,11 +8,11 @@ import java.util.UUID;
 
 import br.com.wedding.api.event.Event;
 import br.com.wedding.api.event.EventRepository;
-import br.com.wedding.api.invite.Guest;
-import br.com.wedding.api.invite.GuestRepository;
-import br.com.wedding.api.invite.InviteGroup;
-import br.com.wedding.api.invite.InviteGroupRepository;
-import br.com.wedding.api.invite.RsvpStatus;
+import br.com.wedding.api.guest.Guest;
+import br.com.wedding.api.guest.GuestRepository;
+import br.com.wedding.api.guest.InviteGroup;
+import br.com.wedding.api.guest.InviteGroupRepository;
+import br.com.wedding.api.guest.RsvpStatus;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,5 +91,13 @@ class InvitePersistenceTests {
         entityManager.clear();
         assertThat(guests.findById(adult.getId()).orElseThrow().getRsvpStatus()).isEqualTo(RsvpStatus.CONFIRMED);
         assertThat(guests.findById(child.getId()).orElseThrow().getRsvpStatus()).isEqualTo(RsvpStatus.DECLINED);
+
+        Guest expired = guests.findById(child.getId()).orElseThrow();
+        expired.setRsvpStatus(RsvpStatus.EXPIRED);
+        guests.saveAndFlush(expired);
+        entityManager.clear();
+        assertThat(jdbc.queryForObject("SELECT rsvp_status::text FROM guest WHERE id = ?",
+                String.class, child.getId())).isEqualTo("expired");
+        assertThat(guests.findById(child.getId()).orElseThrow().getRsvpStatus()).isEqualTo(RsvpStatus.EXPIRED);
     }
 }

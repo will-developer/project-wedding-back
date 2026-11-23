@@ -20,12 +20,12 @@ import br.com.wedding.api.admin.AdminAccount;
 import br.com.wedding.api.admin.AdminAccountRepository;
 import br.com.wedding.api.event.Event;
 import br.com.wedding.api.event.EventRepository;
-import br.com.wedding.api.invite.Guest;
-import br.com.wedding.api.invite.GuestRepository;
-import br.com.wedding.api.invite.InviteGroup;
-import br.com.wedding.api.invite.InviteGroupRepository;
-import br.com.wedding.api.invite.RsvpStatus;
-import br.com.wedding.api.invite.access.TurnstileVerifier;
+import br.com.wedding.api.guest.Guest;
+import br.com.wedding.api.guest.GuestRepository;
+import br.com.wedding.api.guest.InviteGroup;
+import br.com.wedding.api.guest.InviteGroupRepository;
+import br.com.wedding.api.guest.RsvpStatus;
+import br.com.wedding.api.guest.access.TurnstileVerifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,8 +81,9 @@ class GuestSessionHttpTests {
         Event event = events.saveAndFlush(Event.builder()
                 .id(UUID.randomUUID()).title("Test wedding")
                 .eventDate(Instant.parse("2027-11-20T18:00:00Z"))
-                .ceremonyLocation("Venue").receptionLocation("Venue")
-                .ceremonyMapsUrl("https://www.google.com/maps").receptionMapsUrl("https://www.google.com/maps")
+                .ceremonyLocation("Ceremony venue").receptionLocation("Reception venue")
+                .ceremonyMapsUrl("https://www.google.com/maps?q=ceremony")
+                .receptionMapsUrl("https://www.google.com/maps?q=reception")
                 .rsvpDeadline(LocalDate.of(2027, 10, 23)).createdAt(Instant.now()).build());
         eventId = event.getId();
         firstFamily = saveFamily(event, "Family Silva", "A1B2C3");
@@ -117,12 +118,21 @@ class GuestSessionHttpTests {
         assertThat(invitation.statusCode()).isEqualTo(200);
         assertThat(invitation.headers().firstValue("Cache-Control").orElse("")).contains("no-store");
         var body = json.readTree(invitation.body());
+        var event = body.path("event");
+        assertThat(event.path("title").asText()).isEqualTo("Test wedding");
+        assertThat(event.path("eventDate").asText()).isEqualTo("2027-11-20T18:00:00Z");
+        assertThat(event.path("ceremonyLocation").asText()).isEqualTo("Ceremony venue");
+        assertThat(event.path("receptionLocation").asText()).isEqualTo("Reception venue");
+        assertThat(event.path("ceremonyMapsUrl").asText()).isEqualTo("https://www.google.com/maps?q=ceremony");
+        assertThat(event.path("receptionMapsUrl").asText()).isEqualTo("https://www.google.com/maps?q=reception");
+        assertThat(event.path("rsvpDeadline").asText()).isEqualTo("2027-10-23");
+        assertThat(event.size()).isEqualTo(7);
         assertThat(body.path("groupName").asText()).isEqualTo("Family Silva");
         assertThat(body.path("guests").size()).isEqualTo(2);
         assertThat(body.path("guests").get(0).path("name").asText()).isEqualTo("Ana");
         assertThat(body.path("guests").get(1).path("isChild").asBoolean()).isTrue();
         assertThat(body.path("guests").get(0).path("rsvpStatus").asText()).isEqualTo("pending");
-        assertThat(invitation.body()).doesNotContain("notes", "inviteCode", "Admin-only note", "Nina private");
+        assertThat(invitation.body()).doesNotContain("notes", "inviteCode", "createdAt", "Admin-only note", "Nina private");
         assertThat(send("GET", "/api/admin/events/" + eventId + "/invite-groups", null, null).statusCode())
                 .isEqualTo(403);
         assertThat(send("GET", "/api/auth/me", null, null).statusCode()).isEqualTo(403);
