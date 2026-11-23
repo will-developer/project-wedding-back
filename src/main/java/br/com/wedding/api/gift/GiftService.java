@@ -11,9 +11,13 @@ import br.com.wedding.api.event.Event;
 import br.com.wedding.api.event.EventRepository;
 import br.com.wedding.api.gift.dto.CreateGiftRequest;
 import br.com.wedding.api.gift.dto.GiftResponse;
+import br.com.wedding.api.gift.dto.GuestGiftResponse;
 import br.com.wedding.api.gift.dto.UpdateGiftRequest;
+import br.com.wedding.api.guest.InviteGroupRepository;
+import br.com.wedding.api.guest.access.GuestIdentity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -22,6 +26,24 @@ public class GiftService {
 
     private final GiftRepository gifts;
     private final EventRepository events;
+    private final InviteGroupRepository groups;
+
+    @Transactional(readOnly = true)
+    public List<GuestGiftResponse> listForGuest(GuestIdentity identity) {
+        if (!groups.existsByIdAndEventId(identity.getGroupId(), identity.getEventId())) {
+            throw new BadCredentialsException("Invalid invitation session.");
+        }
+        return gifts.findAllByEventIdAndActiveTrueOrderByNameAscIdAsc(identity.getEventId()).stream()
+                .map(gift -> GuestGiftResponse.builder()
+                        .id(gift.getId())
+                        .name(gift.getName())
+                        .description(gift.getDescription())
+                        .imageUrl(gift.getImageUrl())
+                        .price(gift.getPrice())
+                        .availableQuantity(gift.getAvailableQuantity())
+                        .build())
+                .toList();
+    }
 
     @Transactional(readOnly = true)
     public List<GiftResponse> list(UUID eventId) {

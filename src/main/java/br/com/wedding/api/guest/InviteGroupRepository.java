@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface InviteGroupRepository extends JpaRepository<InviteGroup, UUID> {
 
+    boolean existsByIdAndEventId(UUID id, UUID eventId);
+
     boolean existsByInviteCode(String inviteCode);
 
     Optional<InviteGroup> findByInviteCode(String inviteCode);
