@@ -17,9 +17,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
 @Table(name = "gift")
+@DynamicUpdate
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -56,5 +58,6 @@ public class Gift {
     private Integer availableQuantity;
 
     @Column(nullable = false)
+    @Setter
     private boolean active;
 }

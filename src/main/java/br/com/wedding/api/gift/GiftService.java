@@ -62,6 +62,14 @@ public class GiftService {
         return toResponse(gift);
     }
 
+    @Transactional
+    public GiftResponse setActive(UUID eventId, UUID giftId, boolean active) {
+        Gift gift = gifts.findByIdAndEventId(giftId, eventId).orElseThrow(GiftNotFoundException::new);
+        gift.setActive(active);
+        gifts.saveAndFlush(gift);
+        return toResponse(gift);
+    }
+
     private GiftResponse toResponse(Gift gift) {
         return GiftResponse.builder()
                 .id(gift.getId())
