@@ -3,6 +3,7 @@ package br.com.wedding.api.gift;
 import static org.springframework.util.StringUtils.hasText;
 
 import java.util.UUID;
+import java.util.List;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
 import br.com.wedding.api.event.Event;
@@ -20,6 +21,16 @@ public class GiftService {
     private final GiftRepository gifts;
     private final EventRepository events;
 
+    @Transactional(readOnly = true)
+    public List<GiftResponse> list(UUID eventId) {
+        if (!events.existsById(eventId)) {
+            throw new EventNotFoundException();
+        }
+        return gifts.findAllByEventIdOrderByNameAscIdAsc(eventId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     @Transactional
     public GiftResponse create(UUID eventId, CreateGiftRequest request) {
         Event event = events.findById(eventId).orElseThrow(EventNotFoundException::new);
@@ -35,10 +46,13 @@ public class GiftService {
                 .active(true)
                 .build();
         gifts.saveAndFlush(gift);
+        return toResponse(gift);
+    }
 
+    private GiftResponse toResponse(Gift gift) {
         return GiftResponse.builder()
                 .id(gift.getId())
-                .eventId(event.getId())
+                .eventId(gift.getEvent().getId())
                 .name(gift.getName())
                 .description(gift.getDescription())
                 .imageUrl(gift.getImageUrl())
