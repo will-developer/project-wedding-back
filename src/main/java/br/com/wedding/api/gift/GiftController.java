@@ -5,6 +5,7 @@ import java.util.List;
 
 import br.com.wedding.api.gift.dto.CreateGiftRequest;
 import br.com.wedding.api.gift.dto.GiftResponse;
+import br.com.wedding.api.gift.dto.UpdateGiftRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,5 +35,11 @@ public class GiftController {
     public ResponseEntity<GiftResponse> create(@PathVariable UUID eventId,
             @Valid @RequestBody CreateGiftRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(giftService.create(eventId, request));
+    }
+
+    @PutMapping("/{giftId}")
+    public ResponseEntity<GiftResponse> update(@PathVariable UUID eventId, @PathVariable UUID giftId,
+            @Valid @RequestBody UpdateGiftRequest request) {
+        return ResponseEntity.ok(giftService.update(eventId, giftId, request));
     }
 }

@@ -6,10 +6,12 @@ import java.util.UUID;
 import java.util.List;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.GiftNotFoundException;
 import br.com.wedding.api.event.Event;
 import br.com.wedding.api.event.EventRepository;
 import br.com.wedding.api.gift.dto.CreateGiftRequest;
 import br.com.wedding.api.gift.dto.GiftResponse;
+import br.com.wedding.api.gift.dto.UpdateGiftRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +47,17 @@ public class GiftService {
                 .availableQuantity(request.getTotalQuantity())
                 .active(true)
                 .build();
+        gifts.saveAndFlush(gift);
+        return toResponse(gift);
+    }
+
+    @Transactional
+    public GiftResponse update(UUID eventId, UUID giftId, UpdateGiftRequest request) {
+        Gift gift = gifts.findByIdAndEventId(giftId, eventId).orElseThrow(GiftNotFoundException::new);
+        gift.setName(request.getName().strip());
+        gift.setDescription(request.getDescription());
+        gift.setImageUrl(hasText(request.getImageUrl()) ? request.getImageUrl() : null);
+        gift.setPrice(request.getPrice());
         gifts.saveAndFlush(gift);
         return toResponse(gift);
     }

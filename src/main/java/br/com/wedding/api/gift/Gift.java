@@ -16,6 +16,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "gift")
@@ -33,15 +34,19 @@ public class Gift {
     private Event event;
 
     @Column(nullable = false, length = 160)
+    @Setter
     private String name;
 
     @Column(columnDefinition = "text")
+    @Setter
     private String description;
 
     @Column(name = "image_url", length = 2048)
+    @Setter
     private String imageUrl;
 
     @Column(nullable = false, precision = 10, scale = 2)
+    @Setter
     private BigDecimal price;
 
     @Column(name = "total_quantity", nullable = false)

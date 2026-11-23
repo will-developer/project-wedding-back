@@ -28,6 +28,13 @@ public final class ApplicationExceptions {
         }
     }
 
+    public static class GiftNotFoundException extends RuntimeException {
+
+        public GiftNotFoundException() {
+            super("The gift was not found in this event.");
+        }
+    }
+
     public static class RsvpDeadlinePassedException extends RuntimeException {
 
         public RsvpDeadlinePassedException() {
