@@ -5,6 +5,7 @@ import java.util.Map;
 
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.EventNotFoundException;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.GuestNotFoundException;
+import br.com.wedding.api.common.exceptions.ApplicationExceptions.GiftNotFoundException;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.RsvpDeadlinePassedException;
 import br.com.wedding.api.common.exceptions.ApplicationExceptions.ReceptionDetailsRequiredException;
 import org.hibernate.exception.ConstraintViolationException;
@@ -39,6 +40,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(GuestNotFoundException.class)
     public ProblemDetail guestNotFound(GuestNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(GiftNotFoundException.class)
+    public ProblemDetail giftNotFound(GiftNotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
@@ -81,7 +87,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ProblemDetail invalidJson() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-                "Invalid JSON or field format. Use ISO-8601 dates with an offset for eventDate.");
+                "Invalid JSON or field format.");
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
